@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, FolderOpen, CheckCircle2, Circle, Clock, ChevronRight, ChevronDown } from 'lucide-react';
+import { projectsAPI, tasksAPI } from './api';
 
 const TASK_STATUS = {
   PENDING: 'Pending',
@@ -17,26 +18,32 @@ function App() {
   const [addingSubtaskTo, setAddingSubtaskTo] = useState(null);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
-  // Load data from localStorage on mount
+  // Load projects from database on mount
   useEffect(() => {
-    const savedProjects = localStorage.getItem('todoProjects');
-    if (savedProjects) {
-      const parsedProjects = JSON.parse(savedProjects);
-      setProjects(parsedProjects);
-      if (parsedProjects.length > 0) {
-        setSelectedProject(parsedProjects[0].id);
+    const loadProjects = async () => {
+      try {
+        const data = await projectsAPI.getAll();
+        setProjects(data);
+        if (data.length > 0) {
+          setSelectedProject(data[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to load projects:', error);
+        // Fallback to localStorage if API fails
+        const savedProjects = localStorage.getItem('todoProjects');
+        if (savedProjects) {
+          const parsedProjects = JSON.parse(savedProjects);
+          setProjects(parsedProjects);
+          if (parsedProjects.length > 0) {
+            setSelectedProject(parsedProjects[0].id);
+          }
+        }
       }
-    }
+    };
+    loadProjects();
   }, []);
 
-  // Save projects to localStorage whenever they change
-  useEffect(() => {
-    if (projects.length > 0) {
-      localStorage.setItem('todoProjects', JSON.stringify(projects));
-    }
-  }, [projects]);
-
-  const addProject = (e) => {
+  const addProject = async (e) => {
     e.preventDefault();
     if (newProjectName.trim()) {
       const newProject = {
@@ -44,75 +51,101 @@ function App() {
         name: newProjectName.trim(),
         tasks: []
       };
-      setProjects([...projects, newProject]);
-      setSelectedProject(newProject.id);
-      setNewProjectName('');
-      setShowProjectForm(false);
+      try {
+        await projectsAPI.create(newProject);
+        setProjects([...projects, newProject]);
+        setSelectedProject(newProject.id);
+        setNewProjectName('');
+        setShowProjectForm(false);
+      } catch (error) {
+        console.error('Failed to create project:', error);
+        alert('Failed to create project. Please try again.');
+      }
     }
   };
 
-  const deleteProject = (projectId) => {
-    const updatedProjects = projects.filter(p => p.id !== projectId);
-    setProjects(updatedProjects);
-    if (selectedProject === projectId) {
-      setSelectedProject(updatedProjects.length > 0 ? updatedProjects[0].id : null);
+  const deleteProject = async (projectId) => {
+    try {
+      await projectsAPI.delete(projectId);
+      const updatedProjects = projects.filter(p => p.id !== projectId);
+      setProjects(updatedProjects);
+      if (selectedProject === projectId) {
+        setSelectedProject(updatedProjects.length > 0 ? updatedProjects[0].id : null);
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      alert('Failed to delete project. Please try again.');
     }
   };
 
-  const addTask = (e) => {
+  const addTask = async (e) => {
     e.preventDefault();
     if (newTaskTitle.trim() && selectedProject) {
+      const newTask = {
+        id: Date.now().toString(),
+        projectId: selectedProject,
+        parentId: null,
+        title: newTaskTitle.trim(),
+        status: TASK_STATUS.PENDING
+      };
+      try {
+        const createdTask = await tasksAPI.create(newTask);
+        const updatedProjects = projects.map(project => {
+          if (project.id === selectedProject) {
+            return { ...project, tasks: [...project.tasks, createdTask] };
+          }
+          return project;
+        });
+        setProjects(updatedProjects);
+        setNewTaskTitle('');
+      } catch (error) {
+        console.error('Failed to create task:', error);
+        alert('Failed to create task. Please try again.');
+      }
+    }
+  };
+
+  const addSubtask = async (parentTaskId, subtaskTitle) => {
+    if (!subtaskTitle.trim()) return;
+
+    const newSubtask = {
+      id: Date.now().toString() + Math.random(),
+      projectId: selectedProject,
+      parentId: parentTaskId,
+      title: subtaskTitle.trim(),
+      status: TASK_STATUS.PENDING
+    };
+
+    try {
+      const createdSubtask = await tasksAPI.create(newSubtask);
+      
+      const addSubtaskRecursive = (tasks) => {
+        return tasks.map(task => {
+          if (task.id === parentTaskId) {
+            return { ...task, subtasks: [...(task.subtasks || []), createdSubtask] };
+          } else if (task.subtasks && task.subtasks.length > 0) {
+            return { ...task, subtasks: addSubtaskRecursive(task.subtasks) };
+          }
+          return task;
+        });
+      };
+
       const updatedProjects = projects.map(project => {
         if (project.id === selectedProject) {
-          const newTask = {
-            id: Date.now().toString(),
-            title: newTaskTitle.trim(),
-            status: TASK_STATUS.PENDING,
-            createdAt: new Date().toISOString(),
-            subtasks: []
-          };
-          return { ...project, tasks: [...project.tasks, newTask] };
+          return { ...project, tasks: addSubtaskRecursive(project.tasks) };
         }
         return project;
       });
+
       setProjects(updatedProjects);
-      setNewTaskTitle('');
+      setNewSubtaskTitle('');
+      setAddingSubtaskTo(null);
+      // Expand the parent task to show new subtask
+      setExpandedTasks(prev => new Set([...prev, parentTaskId]));
+    } catch (error) {
+      console.error('Failed to create subtask:', error);
+      alert('Failed to create subtask. Please try again.');
     }
-  };
-
-  const addSubtask = (parentTaskId, subtaskTitle) => {
-    if (!subtaskTitle.trim()) return;
-
-    const addSubtaskRecursive = (tasks) => {
-      return tasks.map(task => {
-        if (task.id === parentTaskId) {
-          const newSubtask = {
-            id: Date.now().toString() + Math.random(),
-            title: subtaskTitle.trim(),
-            status: TASK_STATUS.PENDING,
-            createdAt: new Date().toISOString(),
-            subtasks: []
-          };
-          return { ...task, subtasks: [...(task.subtasks || []), newSubtask] };
-        } else if (task.subtasks && task.subtasks.length > 0) {
-          return { ...task, subtasks: addSubtaskRecursive(task.subtasks) };
-        }
-        return task;
-      });
-    };
-
-    const updatedProjects = projects.map(project => {
-      if (project.id === selectedProject) {
-        return { ...project, tasks: addSubtaskRecursive(project.tasks) };
-      }
-      return project;
-    });
-
-    setProjects(updatedProjects);
-    setNewSubtaskTitle('');
-    setAddingSubtaskTo(null);
-    // Expand the parent task to show new subtask
-    setExpandedTasks(prev => new Set([...prev, parentTaskId]));
   };
 
   const updateTaskStatusRecursive = (tasks, taskId, newStatus) => {
@@ -126,14 +159,20 @@ function App() {
     });
   };
 
-  const updateTaskStatus = (taskId, newStatus) => {
-    const updatedProjects = projects.map(project => {
-      if (project.id === selectedProject) {
-        return { ...project, tasks: updateTaskStatusRecursive(project.tasks, taskId, newStatus) };
-      }
-      return project;
-    });
-    setProjects(updatedProjects);
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      await tasksAPI.update(taskId, { status: newStatus });
+      const updatedProjects = projects.map(project => {
+        if (project.id === selectedProject) {
+          return { ...project, tasks: updateTaskStatusRecursive(project.tasks, taskId, newStatus) };
+        }
+        return project;
+      });
+      setProjects(updatedProjects);
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      alert('Failed to update task status. Please try again.');
+    }
   };
 
   const deleteTaskRecursive = (tasks, taskId) => {
@@ -145,14 +184,20 @@ function App() {
     });
   };
 
-  const deleteTask = (taskId) => {
-    const updatedProjects = projects.map(project => {
-      if (project.id === selectedProject) {
-        return { ...project, tasks: deleteTaskRecursive(project.tasks, taskId) };
-      }
-      return project;
-    });
-    setProjects(updatedProjects);
+  const deleteTask = async (taskId) => {
+    try {
+      await tasksAPI.delete(taskId);
+      const updatedProjects = projects.map(project => {
+        if (project.id === selectedProject) {
+          return { ...project, tasks: deleteTaskRecursive(project.tasks, taskId) };
+        }
+        return project;
+      });
+      setProjects(updatedProjects);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      alert('Failed to delete task. Please try again.');
+    }
   };
 
   const toggleExpanded = (taskId) => {
