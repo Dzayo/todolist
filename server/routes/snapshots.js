@@ -55,7 +55,7 @@ router.get('/latest/data', async (req, res) => {
       id: rows[0].id,
       createdAt: rows[0].created_at,
       description: rows[0].description,
-      data: JSON.parse(rows[0].data)
+      data: rows[0].data
     });
   } catch (error) {
     console.error('Error fetching latest snapshot:', error);
