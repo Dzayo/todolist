@@ -10,7 +10,8 @@
     "server": "node server/index.js",
     "server:dev": "nodemon server/index.js",
     "start": "node server/index.js",
-    "migrate": "node apply-migration.js"
+    "migrate": "node apply-migration.js",
+    "migrate:snapshots": "node apply-snapshot-migration.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

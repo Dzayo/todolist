@@ -70,3 +70,47 @@ export const tasksAPI = {
     return response.json();
   }
 };
+
+// Snapshots API
+export const snapshotsAPI = {
+  // Get all snapshots (metadata only)
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/snapshots`);
+    if (!response.ok) throw new Error('Failed to fetch snapshots');
+    return response.json();
+  },
+
+  // Get specific snapshot with full data
+  getById: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/snapshots/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch snapshot');
+    return response.json();
+  },
+
+  // Get latest snapshot
+  getLatest: async () => {
+    const response = await fetch(`${API_BASE_URL}/snapshots/latest/data`);
+    if (!response.ok) throw new Error('Failed to fetch latest snapshot');
+    return response.json();
+  },
+
+  // Create new snapshot
+  create: async (snapshot) => {
+    const response = await fetch(`${API_BASE_URL}/snapshots`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(snapshot)
+    });
+    if (!response.ok) throw new Error('Failed to create snapshot');
+    return response.json();
+  },
+
+  // Delete snapshot
+  delete: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/snapshots/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to delete snapshot');
+    return response.json();
+  }
+};

@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import projectsRouter from './routes/projects.js';
 import tasksRouter from './routes/tasks.js';
+import snapshotsRouter from './routes/snapshots.js';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/projects', projectsRouter);
 app.use('/api/tasks', tasksRouter);
+app.use('/api/snapshots', snapshotsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
