@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, FolderOpen, CheckCircle2, Circle, Clock, ChevronRight, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, FolderOpen, CheckCircle2, Circle, Clock, ChevronRight, ChevronDown, FileText, GripVertical, Edit2, X, Save } from 'lucide-react';
 import { projectsAPI, tasksAPI } from './api';
 
 const TASK_STATUS = {
@@ -17,6 +17,13 @@ function App() {
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [addingSubtaskTo, setAddingSubtaskTo] = useState(null);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [descriptionModalTask, setDescriptionModalTask] = useState(null);
+  const [descriptionText, setDescriptionText] = useState('');
+  const [draggedTask, setDraggedTask] = useState(null);
+  const [dragOverTask, setDragOverTask] = useState(null);
+  const [dragOverPosition, setDragOverPosition] = useState(null); // 'before', 'after', 'inside'
 
   // Load projects from database on mount
   useEffect(() => {
@@ -86,6 +93,7 @@ function App() {
         projectId: selectedProject,
         parentId: null,
         title: newTaskTitle.trim(),
+        description: '',
         status: TASK_STATUS.PENDING
       };
       try {
@@ -113,6 +121,7 @@ function App() {
       projectId: selectedProject,
       parentId: parentTaskId,
       title: subtaskTitle.trim(),
+      description: '',
       status: TASK_STATUS.PENDING
     };
 
@@ -257,6 +266,118 @@ function App() {
     }
   };
 
+  const updateTaskTitle = async (taskId, newTitle) => {
+    if (!newTitle.trim()) return;
+    
+    try {
+      await tasksAPI.update(taskId, { title: newTitle.trim() });
+      
+      const updateTitleRecursive = (tasks) => {
+        return tasks.map(task => {
+          if (task.id === taskId) {
+            return { ...task, title: newTitle.trim() };
+          } else if (task.subtasks && task.subtasks.length > 0) {
+            return { ...task, subtasks: updateTitleRecursive(task.subtasks) };
+          }
+          return task;
+        });
+      };
+
+      const updatedProjects = projects.map(project => {
+        if (project.id === selectedProject) {
+          return { ...project, tasks: updateTitleRecursive(project.tasks) };
+        }
+        return project;
+      });
+      setProjects(updatedProjects);
+      setEditingTaskId(null);
+      setEditingTitle('');
+    } catch (error) {
+      console.error('Failed to update task title:', error);
+      alert('Failed to update task title. Please try again.');
+    }
+  };
+
+  const updateTaskDescription = async (taskId, newDescription) => {
+    try {
+      await tasksAPI.update(taskId, { description: newDescription });
+      
+      const updateDescriptionRecursive = (tasks) => {
+        return tasks.map(task => {
+          if (task.id === taskId) {
+            return { ...task, description: newDescription };
+          } else if (task.subtasks && task.subtasks.length > 0) {
+            return { ...task, subtasks: updateDescriptionRecursive(task.subtasks) };
+          }
+          return task;
+        });
+      };
+
+      const updatedProjects = projects.map(project => {
+        if (project.id === selectedProject) {
+          return { ...project, tasks: updateDescriptionRecursive(project.tasks) };
+        }
+        return project;
+      });
+      setProjects(updatedProjects);
+      setDescriptionModalTask(null);
+      setDescriptionText('');
+    } catch (error) {
+      console.error('Failed to update task description:', error);
+      alert('Failed to update task description. Please try again.');
+    }
+  };
+
+  const handleDragStart = (e, task) => {
+    setDraggedTask(task);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, task, position) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverTask(task);
+    setDragOverPosition(position);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+    setDragOverTask(null);
+    setDragOverPosition(null);
+  };
+
+  const handleDrop = async (e, targetTask, position) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!draggedTask || draggedTask.id === targetTask.id) {
+      handleDragEnd();
+      return;
+    }
+
+    // Determine new parent based on drop position
+    let newParentId = null;
+    
+    if (position === 'inside') {
+      newParentId = targetTask.id;
+    } else if (position === 'before' || position === 'after') {
+      newParentId = targetTask.parentId || null;
+    }
+
+    try {
+      await tasksAPI.update(draggedTask.id, { parentId: newParentId });
+      
+      // Reload projects to reflect changes
+      const data = await projectsAPI.getAll();
+      setProjects(data);
+    } catch (error) {
+      console.error('Failed to move task:', error);
+      alert('Failed to move task. Please try again.');
+    }
+    
+    handleDragEnd();
+  };
+
   const currentProject = projects.find(p => p.id === selectedProject);
 
   // Recursive TaskItem component
@@ -264,16 +385,38 @@ function App() {
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
     const isExpanded = expandedTasks.has(task.id);
     const isAddingSubtask = addingSubtaskTo === task.id;
+    const isEditing = editingTaskId === task.id;
+    const isDraggedOver = dragOverTask?.id === task.id;
     const indentStyle = { paddingLeft: `${depth * 24}px` };
 
     return (
       <div>
         {/* Task Row */}
         <div
-          className={`group border-b border-slate-200 ${getStatusColor(task.status)} transition-colors`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, task)}
+          onDragEnd={handleDragEnd}
+          onDragOver={(e) => handleDragOver(e, task, 'inside')}
+          onDrop={(e) => handleDrop(e, task, 'inside')}
+          className={`group border-b border-slate-200 ${getStatusColor(task.status)} transition-colors relative ${
+            isDraggedOver && dragOverPosition === 'inside' ? 'ring-2 ring-blue-500' : ''
+          }`}
           style={indentStyle}
         >
+          {/* Drag indicators */}
+          {isDraggedOver && dragOverPosition === 'before' && (
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500" />
+          )}
+          {isDraggedOver && dragOverPosition === 'after' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+          )}
+          
           <div className="flex items-center gap-2 py-2 px-3">
+            {/* Drag Handle */}
+            <div className="flex-shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">
+              <GripVertical className="w-4 h-4 text-slate-400" />
+            </div>
+
             {/* Expand/Collapse Button */}
             <button
               onClick={() => toggleExpanded(task.id)}
@@ -299,10 +442,54 @@ function App() {
               {getStatusIcon(task.status)}
             </button>
 
-            {/* Task Title */}
-            <span className={`flex-1 text-sm ${task.status === TASK_STATUS.DONE ? 'line-through opacity-60' : ''}`}>
-              {task.title}
-            </span>
+            {/* Task Title - Editable */}
+            {isEditing ? (
+              <div className="flex-1 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      updateTaskTitle(task.id, editingTitle);
+                    } else if (e.key === 'Escape') {
+                      setEditingTaskId(null);
+                      setEditingTitle('');
+                    }
+                  }}
+                  className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+                <button
+                  onClick={() => updateTaskTitle(task.id, editingTitle)}
+                  className="p-1 hover:bg-green-200 rounded transition-colors"
+                  title="Save"
+                >
+                  <Save className="w-4 h-4 text-green-600" />
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingTaskId(null);
+                    setEditingTitle('');
+                  }}
+                  className="p-1 hover:bg-red-200 rounded transition-colors"
+                  title="Cancel"
+                >
+                  <X className="w-4 h-4 text-red-600" />
+                </button>
+              </div>
+            ) : (
+              <span 
+                className={`flex-1 text-sm ${task.status === TASK_STATUS.DONE ? 'line-through opacity-60' : ''}`}
+                onDoubleClick={() => {
+                  setEditingTaskId(task.id);
+                  setEditingTitle(task.title);
+                }}
+                title="Double-click to edit"
+              >
+                {task.title}
+              </span>
+            )}
 
             {/* Status Badge */}
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBadgeColor(task.status)}`}>
@@ -311,6 +498,26 @@ function App() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => {
+                  setDescriptionModalTask(task);
+                  setDescriptionText(task.description || '');
+                }}
+                className="p-1 hover:bg-purple-200 rounded transition-colors"
+                title="View/Edit Description"
+              >
+                <FileText className={`w-4 h-4 ${task.description ? 'text-purple-600' : 'text-slate-400'}`} />
+              </button>
+              <button
+                onClick={() => {
+                  setEditingTaskId(task.id);
+                  setEditingTitle(task.title);
+                }}
+                className="p-1 hover:bg-yellow-200 rounded transition-colors"
+                title="Edit Title"
+              >
+                <Edit2 className="w-4 h-4 text-yellow-600" />
+              </button>
               <button
                 onClick={() => {
                   setAddingSubtaskTo(task.id);
@@ -525,6 +732,73 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* Description Modal */}
+        {descriptionModalTask && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setDescriptionModalTask(null);
+              setDescriptionText('');
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-200">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-6 h-6 text-purple-600" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-800">Task Description</h3>
+                    <p className="text-sm text-slate-500 mt-1">{descriptionModalTask.title}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setDescriptionModalTask(null);
+                    setDescriptionText('');
+                  }}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Close"
+                >
+                  <X className="w-5 h-5 text-slate-600" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <textarea
+                  value={descriptionText}
+                  onChange={(e) => setDescriptionText(e.target.value)}
+                  placeholder="Add a detailed description for this task..."
+                  className="w-full h-64 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200">
+                <button
+                  onClick={() => {
+                    setDescriptionModalTask(null);
+                    setDescriptionText('');
+                  }}
+                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => updateTaskDescription(descriptionModalTask.id, descriptionText)}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Description
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

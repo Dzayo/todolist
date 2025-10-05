@@ -6,7 +6,7 @@ const router = express.Router();
 // Create new task
 router.post('/', async (req, res) => {
   try {
-    const { id, projectId, parentId, title, status } = req.body;
+    const { id, projectId, parentId, title, status, description, sortOrder } = req.body;
     
     if (!title || title.trim() === '') {
       return res.status(400).json({ error: 'Task title is required' });
@@ -16,8 +16,8 @@ router.post('/', async (req, res) => {
     }
     
     await db.query(
-      'INSERT INTO tasks (id, project_id, parent_id, title, status) VALUES (?, ?, ?, ?, ?)',
-      [id, projectId, parentId || null, title.trim(), status || 'Pending']
+      'INSERT INTO tasks (id, project_id, parent_id, title, description, status, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [id, projectId, parentId || null, title.trim(), description || '', status || 'Pending', sortOrder || 0]
     );
     
     const [rows] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
@@ -25,7 +25,9 @@ router.post('/', async (req, res) => {
     res.status(201).json({
       id: rows[0].id,
       title: rows[0].title,
+      description: rows[0].description,
       status: rows[0].status,
+      sortOrder: rows[0].sort_order,
       createdAt: rows[0].created_at,
       subtasks: []
     });
@@ -38,7 +40,7 @@ router.post('/', async (req, res) => {
 // Update task
 router.put('/:id', async (req, res) => {
   try {
-    const { title, status } = req.body;
+    const { title, status, description, parentId, sortOrder } = req.body;
     const updates = [];
     const values = [];
     
@@ -49,6 +51,18 @@ router.put('/:id', async (req, res) => {
     if (status !== undefined) {
       updates.push('status = ?');
       values.push(status);
+    }
+    if (description !== undefined) {
+      updates.push('description = ?');
+      values.push(description);
+    }
+    if (parentId !== undefined) {
+      updates.push('parent_id = ?');
+      values.push(parentId);
+    }
+    if (sortOrder !== undefined) {
+      updates.push('sort_order = ?');
+      values.push(sortOrder);
     }
     
     if (updates.length === 0) {
@@ -70,7 +84,9 @@ router.put('/:id', async (req, res) => {
     res.json({
       id: rows[0].id,
       title: rows[0].title,
+      description: rows[0].description,
       status: rows[0].status,
+      sortOrder: rows[0].sort_order,
       createdAt: rows[0].created_at
     });
   } catch (error) {
