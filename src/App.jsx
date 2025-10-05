@@ -243,26 +243,26 @@ function App() {
   const getStatusColor = (status) => {
     switch (status) {
       case TASK_STATUS.PENDING:
-        return 'bg-slate-50 hover:bg-slate-100 border-slate-200';
+        return 'bg-slate-800 hover:bg-slate-700 border-slate-600';
       case TASK_STATUS.DOING:
-        return 'bg-blue-50 hover:bg-blue-100 border-blue-200';
+        return 'bg-blue-900 hover:bg-blue-800 border-blue-700';
       case TASK_STATUS.DONE:
-        return 'bg-green-50 hover:bg-green-100 border-green-200';
+        return 'bg-green-900 hover:bg-green-800 border-green-700';
       default:
-        return 'bg-gray-50 hover:bg-gray-100 border-gray-200';
+        return 'bg-gray-800 hover:bg-gray-700 border-gray-600';
     }
   };
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
       case TASK_STATUS.PENDING:
-        return 'bg-slate-100 text-slate-700';
+        return 'bg-slate-700 text-slate-200';
       case TASK_STATUS.DOING:
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-700 text-blue-200';
       case TASK_STATUS.DONE:
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-700 text-green-200';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-700 text-gray-200';
     }
   };
 
@@ -398,7 +398,7 @@ function App() {
           onDragEnd={handleDragEnd}
           onDragOver={(e) => handleDragOver(e, task, 'inside')}
           onDrop={(e) => handleDrop(e, task, 'inside')}
-          className={`group border-b border-slate-200 ${getStatusColor(task.status)} transition-colors relative ${
+          className={`group border-b border-gray-700 ${getStatusColor(task.status)} transition-colors relative ${
             isDraggedOver && dragOverPosition === 'inside' ? 'ring-2 ring-blue-500' : ''
           }`}
           style={indentStyle}
@@ -414,19 +414,19 @@ function App() {
           <div className="flex items-center gap-2 py-2 px-3">
             {/* Drag Handle */}
             <div className="flex-shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">
-              <GripVertical className="w-4 h-4 text-slate-400" />
+              <GripVertical className="w-4 h-4 text-gray-500" />
             </div>
 
             {/* Expand/Collapse Button */}
             <button
               onClick={() => toggleExpanded(task.id)}
-              className="flex-shrink-0 w-5 h-5 flex items-center justify-center hover:bg-slate-200 rounded transition-colors"
+              className="flex-shrink-0 w-5 h-5 flex items-center justify-center hover:bg-gray-700 rounded transition-colors"
             >
               {hasSubtasks ? (
                 isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-slate-600" />
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-slate-600" />
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
                 )
               ) : (
                 <span className="w-4 h-4" />
@@ -457,30 +457,30 @@ function App() {
                       setEditingTitle('');
                     }
                   }}
-                  className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-2 py-1 text-sm bg-gray-700 text-white border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   autoFocus
                 />
                 <button
                   onClick={() => updateTaskTitle(task.id, editingTitle)}
-                  className="p-1 hover:bg-green-200 rounded transition-colors"
+                  className="p-1 hover:bg-green-900 rounded transition-colors"
                   title="Save"
                 >
-                  <Save className="w-4 h-4 text-green-600" />
+                  <Save className="w-4 h-4 text-green-400" />
                 </button>
                 <button
                   onClick={() => {
                     setEditingTaskId(null);
                     setEditingTitle('');
                   }}
-                  className="p-1 hover:bg-red-200 rounded transition-colors"
+                  className="p-1 hover:bg-red-900 rounded transition-colors"
                   title="Cancel"
                 >
-                  <X className="w-4 h-4 text-red-600" />
+                  <X className="w-4 h-4 text-red-400" />
                 </button>
               </div>
             ) : (
               <span 
-                className={`flex-1 text-sm ${task.status === TASK_STATUS.DONE ? 'line-through opacity-60' : ''}`}
+                className={`flex-1 text-sm text-gray-200 ${task.status === TASK_STATUS.DONE ? 'line-through opacity-60' : ''}`}
                 onDoubleClick={() => {
                   setEditingTaskId(task.id);
                   setEditingTitle(task.title);
@@ -503,37 +503,37 @@ function App() {
                   setDescriptionModalTask(task);
                   setDescriptionText(task.description || '');
                 }}
-                className="p-1 hover:bg-purple-200 rounded transition-colors"
+                className="p-1 hover:bg-purple-900 rounded transition-colors"
                 title="View/Edit Description"
               >
-                <FileText className={`w-4 h-4 ${task.description ? 'text-purple-600' : 'text-slate-400'}`} />
+                <FileText className={`w-4 h-4 ${task.description ? 'text-purple-400' : 'text-gray-500'}`} />
               </button>
               <button
                 onClick={() => {
                   setEditingTaskId(task.id);
                   setEditingTitle(task.title);
                 }}
-                className="p-1 hover:bg-yellow-200 rounded transition-colors"
+                className="p-1 hover:bg-yellow-900 rounded transition-colors"
                 title="Edit Title"
               >
-                <Edit2 className="w-4 h-4 text-yellow-600" />
+                <Edit2 className="w-4 h-4 text-yellow-400" />
               </button>
               <button
                 onClick={() => {
                   setAddingSubtaskTo(task.id);
                   setExpandedTasks(prev => new Set([...prev, task.id]));
                 }}
-                className="p-1 hover:bg-blue-200 rounded transition-colors"
+                className="p-1 hover:bg-blue-900 rounded transition-colors"
                 title="Add Subtask"
               >
-                <Plus className="w-4 h-4 text-blue-600" />
+                <Plus className="w-4 h-4 text-blue-400" />
               </button>
               <button
                 onClick={() => deleteTask(task.id)}
-                className="p-1 hover:bg-red-200 rounded transition-colors"
+                className="p-1 hover:bg-red-900 rounded transition-colors"
                 title="Delete Task"
               >
-                <Trash2 className="w-4 h-4 text-red-600" />
+                <Trash2 className="w-4 h-4 text-red-400" />
               </button>
             </div>
           </div>
@@ -541,7 +541,7 @@ function App() {
 
         {/* Add Subtask Form */}
         {isAddingSubtask && isExpanded && (
-          <div style={{ paddingLeft: `${(depth + 1) * 24}px` }} className="border-b border-slate-200 bg-slate-50 py-2 px-3">
+          <div style={{ paddingLeft: `${(depth + 1) * 24}px` }} className="border-b border-gray-700 bg-gray-800 py-2 px-3">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -554,7 +554,7 @@ function App() {
                 value={newSubtaskTitle}
                 onChange={(e) => setNewSubtaskTitle(e.target.value)}
                 placeholder="Subtask title..."
-                className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-1.5 text-sm bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
               />
               <button
@@ -569,7 +569,7 @@ function App() {
                   setAddingSubtaskTo(null);
                   setNewSubtaskTitle('');
                 }}
-                className="px-3 py-1.5 bg-slate-300 text-slate-700 text-sm rounded hover:bg-slate-400 transition-colors"
+                className="px-3 py-1.5 bg-gray-700 text-gray-200 text-sm rounded hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
@@ -590,29 +590,29 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
+    <div className="min-h-screen bg-gray-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">Task Manager</h1>
-          <p className="text-slate-600">Organize your tasks with unlimited nested subtasks</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Task Manager</h1>
+          <p className="text-gray-400">Organize your tasks with unlimited nested subtasks</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Projects Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-gray-900 rounded-lg shadow-md p-6 border border-gray-800">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
                   <FolderOpen className="w-5 h-5" />
                   Projects
                 </h2>
                 <button
                   onClick={() => setShowProjectForm(!showProjectForm)}
-                  className="p-1 hover:bg-slate-100 rounded-md transition-colors"
+                  className="p-1 hover:bg-gray-800 rounded-md transition-colors"
                   title="Add Project"
                 >
-                  <Plus className="w-5 h-5 text-slate-600" />
+                  <Plus className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
 
@@ -623,7 +623,7 @@ function App() {
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                     placeholder="Project name"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                     autoFocus
                   />
                   <div className="flex gap-2">
@@ -639,7 +639,7 @@ function App() {
                         setShowProjectForm(false);
                         setNewProjectName('');
                       }}
-                      className="flex-1 bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md hover:bg-slate-300 transition-colors text-sm font-medium"
+                      className="flex-1 bg-gray-700 text-gray-200 px-3 py-1.5 rounded-md hover:bg-gray-600 transition-colors text-sm font-medium"
                     >
                       Cancel
                     </button>
@@ -649,28 +649,28 @@ function App() {
 
               <div className="space-y-2">
                 {projects.length === 0 ? (
-                  <p className="text-slate-400 text-sm text-center py-4">No projects yet</p>
+                  <p className="text-gray-500 text-sm text-center py-4">No projects yet</p>
                 ) : (
                   projects.map(project => (
                     <div
                       key={project.id}
                       className={`flex items-center justify-between p-3 rounded-md cursor-pointer transition-colors ${
                         selectedProject === project.id
-                          ? 'bg-blue-50 border-2 border-blue-500'
-                          : 'bg-slate-50 hover:bg-slate-100 border-2 border-transparent'
+                          ? 'bg-blue-900 border-2 border-blue-500'
+                          : 'bg-gray-800 hover:bg-gray-750 border-2 border-transparent'
                       }`}
                       onClick={() => setSelectedProject(project.id)}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-800 truncate">{project.name}</p>
-                        <p className="text-xs text-slate-500">{project.tasks.length} tasks</p>
+                        <p className="font-medium text-white truncate">{project.name}</p>
+                        <p className="text-xs text-gray-400">{project.tasks.length} tasks</p>
                       </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteProject(project.id);
                         }}
-                        className="p-1 hover:bg-red-100 rounded-md transition-colors ml-2"
+                        className="p-1 hover:bg-red-900 rounded-md transition-colors ml-2"
                         title="Delete Project"
                       >
                         <Trash2 className="w-4 h-4 text-red-500" />
@@ -687,15 +687,15 @@ function App() {
             {currentProject ? (
               <>
                 {/* Add Task Form */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-2xl font-semibold text-slate-800 mb-4">{currentProject.name}</h2>
+                <div className="bg-gray-900 rounded-lg shadow-md p-6 mb-6 border border-gray-800">
+                  <h2 className="text-2xl font-semibold text-white mb-4">{currentProject.name}</h2>
                   <form onSubmit={addTask} className="flex gap-2">
                     <input
                       type="text"
                       value={newTaskTitle}
                       onChange={(e) => setNewTaskTitle(e.target.value)}
                       placeholder="Add a new task..."
-                      className="flex-1 px-4 py-3 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
                       type="submit"
@@ -708,11 +708,11 @@ function App() {
                 </div>
 
                 {/* Hierarchical Task List */}
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                <div className="bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-800">
                   {currentProject.tasks.length === 0 ? (
                     <div className="p-12 text-center">
-                      <Circle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-400">No tasks yet. Add your first task above!</p>
+                      <Circle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-500">No tasks yet. Add your first task above!</p>
                     </div>
                   ) : (
                     <div>
@@ -724,10 +724,10 @@ function App() {
                 </div>
               </>
             ) : (
-              <div className="bg-white rounded-lg shadow-md p-12 text-center">
-                <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-slate-600 mb-2">No Project Selected</h3>
-                <p className="text-slate-400">Create or select a project to start managing your tasks</p>
+              <div className="bg-gray-900 rounded-lg shadow-md p-12 text-center border border-gray-800">
+                <FolderOpen className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-300 mb-2">No Project Selected</h3>
+                <p className="text-gray-500">Create or select a project to start managing your tasks</p>
               </div>
             )}
           </div>
@@ -736,23 +736,23 @@ function App() {
         {/* Description Modal */}
         {descriptionModalTask && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"
             onClick={() => {
               setDescriptionModalTask(null);
               setDescriptionText('');
             }}
           >
             <div 
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+              className="bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col border border-gray-700"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between p-6 border-b border-gray-700">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-6 h-6 text-purple-600" />
+                  <FileText className="w-6 h-6 text-purple-400" />
                   <div>
-                    <h3 className="text-xl font-semibold text-slate-800">Task Description</h3>
-                    <p className="text-sm text-slate-500 mt-1">{descriptionModalTask.title}</p>
+                    <h3 className="text-xl font-semibold text-white">Task Description</h3>
+                    <p className="text-sm text-gray-400 mt-1">{descriptionModalTask.title}</p>
                   </div>
                 </div>
                 <button
@@ -760,10 +760,10 @@ function App() {
                     setDescriptionModalTask(null);
                     setDescriptionText('');
                   }}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
                   title="Close"
                 >
-                  <X className="w-5 h-5 text-slate-600" />
+                  <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
 
@@ -773,18 +773,18 @@ function App() {
                   value={descriptionText}
                   onChange={(e) => setDescriptionText(e.target.value)}
                   placeholder="Add a detailed description for this task..."
-                  className="w-full h-64 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                  className="w-full h-64 px-4 py-3 bg-gray-800 text-white placeholder-gray-500 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                 />
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200">
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-700">
                 <button
                   onClick={() => {
                     setDescriptionModalTask(null);
                     setDescriptionText('');
                   }}
-                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+                  className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
                 >
                   Cancel
                 </button>
