@@ -2,6 +2,8 @@
 
 ## 🚀 Setup (One-Time)
 
+### For New Users
+
 ### Step 1: Apply Database Migration
 
 Run this command to add the snapshots table:
@@ -16,6 +18,22 @@ You should see:
 ✓ Snapshots table created successfully
 ✅ Migration completed successfully!
 ```
+
+### For Existing Users with Data
+
+If you have existing projects and tasks in the old system:
+
+```bash
+# Step 1: Create snapshots table
+npm run migrate:snapshots
+
+# Step 2: Migrate your existing data
+npm run migrate:legacy
+```
+
+This will preserve all your existing projects and tasks as the first snapshot.
+
+See `LEGACY_MIGRATION_GUIDE.md` for detailed migration instructions.
 
 ### Step 2: Restart Server
 
